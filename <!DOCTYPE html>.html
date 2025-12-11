@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>终极单词猜想助手 (37w+ 海量词库)</title>
+    <style>
+        :root {
+            --primary-color: #2980b9;
+            --secondary-color: #2c3e50;
+            --bg-color: #f0f2f5;
+            --panel-bg: #ffffff;
+            --success-color: #27ae60;
+            --danger-color: #c0392b;
+            --warning-color: #d35400;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--secondary-color);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        h1 { margin-bottom: 5px; color: var(--secondary-color); }
+        .subtitle { font-size: 0.9em; color: #7f8c8d; margin-bottom: 25px; }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            background: var(--panel-bg);
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #ebedef;
+        }
+        .section:last-child { border-bottom: none; padding-bottom: 0; }
+        
+        .section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            font-weight: 700;
+            color: #34495e;
+            font-size: 1.1em;
+        }
+        .step-badge {
+            background: var(--secondary-color);
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 0.8em;
+        }
+
+        /* 1. 长度滑块 */
+        .length-control {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        input[type="range"] { flex-grow: 1; cursor: pointer; height: 8px; border-radius: 5px; accent-color: var(--primary-color); }
+        .length-display {
+            background: var(--primary-color);
+            color: white;
+            padding: 8px 18px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.2em;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        /* 2. 输入框区域 */
+        .input-group {
+            display: flex;
+            gap: 25px;
+        }
+        @media (max-width: 650px) { .input-group { flex-direction: column; gap: 15px; } }
+        
+        .input-box { flex: 1; position: relative; }
+        .input-box label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.9em; }
+        .input-box input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #dfe6e9;
+            border-radius: 8px;
+            font-size: 1.2em;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            box-sizing: border-box; 
+            transition: all 0.3s;
+        }
+        .input-box input:focus { outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(41, 128, 185, 0.1); }
+        
+        /* 颜色区分 */
+        .input-box.pool label { color: var(--warning-color); }
+        .input-box.pool input:focus { border-color: var(--warning-color); box-shadow: 0 0 0 3px rgba(211, 84, 0, 0.1); }
+        .input-box.must label { color: var(--success-color); }
+        .input-box.must input:focus { border-color: var(--success-color); box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1); }
+
+        /* 3. 排除区域 (Exclude) */
+        .exclude-container {
+            background: #fff5f5;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #ffecec;
+        }
+        .exclude-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(32px, 1fr));
+            gap: 8px;
+        }
+        .exclude-btn {
+            background: white;
+            border: 1px solid #eecbcb;
+            color: #c0392b;
+            padding: 10px 0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.15s;
+            text-transform: uppercase;
+            text-align: center;
+            font-size: 1.1em;
+        }
+        .exclude-btn:hover { background: #ffebeb; transform: translateY(-1px); }
+        
+        /* 选中排除的状态 */
+        .exclude-btn.banned {
+            background-color: var(--danger-color);
+            color: white;
+            border-color: var(--danger-color);
+            opacity: 0.9;
+        }
+
+        /* 辅助键盘 */
+        .keyboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(30px, 1fr));
+            gap: 6px;
+            margin-top: 15px;
+            background: #eaf2f8;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .key-btn {
+            background: white;
+            border: 1px solid #d6eaf8;
+            padding: 8px 0;
+            border-radius: 4px;
+            cursor: pointer;
+            color: var(--primary-color);
+            font-weight: 600;
+            transition: all 0.1s;
+        }
+        .key-btn:hover { background: var(--primary-color); color: white; }
+
+        /* 结果区域 */
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        #wordList {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 5px;
+        }
+        /* 自定义滚动条 */
+        #wordList::-webkit-scrollbar { width: 8px; }
+        #wordList::-webkit-scrollbar-track { background: #f1f1f1; }
+        #wordList::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        
+        .word-tag {
+            background: white;
+            border: 1px solid #bdc3c7;
+            color: #34495e;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 1em;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s;
+            font-family: 'Courier New', Courier, monospace; /* 等宽字体看字母更清楚 */
+            font-weight: bold;
+        }
+        .word-tag:hover { background: var(--secondary-color); color: white; border-color: var(--secondary-color); transform: scale(1.05); }
+        
+        .loading { 
+            color: #7f8c8d; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            font-style: italic;
+        }
+        .status-badge {
+            font-size: 0.8em;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: #e0e0e0;
+            color: #555;
+        }
+        
+        /* 加载动画 */
+        .spinner {
+            width: 16px; height: 16px;
+            border: 3px solid #ccc;
+            border-top-color: var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+
+    <h1>终极单词猜想助手</h1>
+    <div class="subtitle">当前加载词库: <span id="dictStatus" style="font-weight:bold;">连接中...</span></div>
+
+    <div class="container">
+        
+        <div class="section">
+            <div class="section-header">
+                <div class="step-badge">1</div>
+                <span>设定单词字数</span>
+            </div>
+            <div class="length-control">
+                <input type="range" id="lengthSlider" min="2" max="20" value="5">
+                <span id="lengthDisplay" class="length-display">5</span>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <div class="step-badge">2</div>
+                <span>输入已知信息</span>
+            </div>
+            <div class="input-group">
+                <div class="input-box pool">
+                    <label>⚪ 字母池 (Available)</label>
+                    <input type="text" id="possibleInput" placeholder="输入你有的所有字母..." onfocus="setActiveInput('possibleInput')">
+                </div>
+                <div class="input-box must">
+                    <label>🟢 必含字母 (Must Have)</label>
+                    <input type="text" id="existingInput" placeholder="输入确定存在的字母..." onfocus="setActiveInput('existingInput')">
+                </div>
+            </div>
+            <div class="keyboard-grid" id="inputKeyboard">
+                </div>
+            <div style="text-align:center; margin-top:5px; font-size:0.8em; color:#999;">点击上方键盘将字母输入到选中的框中</div>
+        </div>
+
+        <div class="section">
+            <div class="section-header">
+                <div class="step-badge" style="background:var(--danger-color)">3</div>
+                <span>排除字母 (点击变红 = 绝对不含)</span>
+            </div>
+            <div class="exclude-container">
+                <div class="exclude-grid" id="excludeKeyboard">
+                    </div>
+            </div>
+        </div>
+
+        <div class="section" style="border:none; padding-bottom:0;">
+            <div class="results-header">
+                <div class="section-header" style="margin:0;">
+                    <div class="step-badge" style="background:var(--success-color)">4</div>
+                    <span>匹配结果</span>
+                </div>
+                <span class="status-badge" id="matchCount">...</span>
+            </div>
+            <div id="wordList">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <span>正在从 GitHub 下载 370,000 词库 (约 3MB)，请稍候...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // --- 核心数据 ---
+    let dictionary = []; // 存放单词
+    let excludedSet = new Set(); // 存放被排除的字母
+    let activeInputId = 'possibleInput'; // 当前光标所在的输入框
+
+    // --- DOM 元素 ---
+    const slider = document.getElementById('lengthSlider');
+    const lengthDisplay = document.getElementById('lengthDisplay');
+    const possibleInput = document.getElementById('possibleInput');
+    const existingInput = document.getElementById('existingInput');
+    const excludeKeyboard = document.getElementById('excludeKeyboard');
+    const inputKeyboard = document.getElementById('inputKeyboard');
+    const wordList = document.getElementById('wordList');
+    const matchCount = document.getElementById('matchCount');
+    const dictStatus = document.getElementById('dictStatus');
+
+    // --- 1. 初始化加载海量词库 ---
+    // 使用 dwyl/english-words 的 alpha list，包含约 370,000 个单词
+    const DICT_URL = 'https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt';
+
+    async function loadDictionary() {
+        try {
+            const response = await fetch(DICT_URL);
+            if (!response.ok) throw new Error("Network response was not ok");
+            const text = await response.text();
+            
+            // 按行分割，处理 Windows/Unix 换行符
+            dictionary = text.split(/\r?\n/);
+            
+            // 简单清洗，移除空行
+            dictionary = dictionary.filter(w => w.length > 0);
+
+            dictStatus.textContent = `${dictionary.length.toLocaleString()} 词 (Ready)`;
+            dictStatus.style.color = '#27ae60';
+            
+            updateResults(); // 加载完毕后立即计算
+        } catch (error) {
+            console.error("词库加载失败:", error);
+            dictStatus.textContent = "加载失败 (使用离线备用库)";
+            dictStatus.style.color = '#c0392b';
+            // 备用小词库防止页面完全不可用
+            dictionary = ["apple", "banana", "cherry", "date", "elderberry", "fig", "grape", "error", "network", "fail"];
+            updateResults();
+        }
+    }
+
+    // 启动加载
+    loadDictionary();
+
+    // --- 2. 界面生成 ---
+    const letters = 'abcdefghijklmnopqrstuvwxyz'.split('');
+
+    // A. 生成排除键盘 (红色)
+    letters.forEach(char => {
+        const btn = document.createElement('div');
+        btn.className = 'exclude-btn';
+        btn.textContent = char;
+        btn.onclick = () => toggleExclude(btn, char);
+        excludeKeyboard.appendChild(btn);
+    });
+
+    // B. 生成输入辅助键盘 (蓝色)
+    letters.forEach(char => {
+        const btn = document.createElement('button');
+        btn.className = 'key-btn';
+        btn.textContent = char;
+        btn.onclick = () => addLetterToInput(char);
+        inputKeyboard.appendChild(btn);
+    });
+
+    // --- 3. 交互逻辑 ---
+
+    window.setActiveInput = (id) => {
+        activeInputId = id;
+    };
+
+    function addLetterToInput(char) {
+        const input = document.getElementById(activeInputId);
+        input.value += char;
+        input.focus();
+        updateResults(); // 实时触发
+    }
+
+    function toggleExclude(btnElement, char) {
+        if (excludedSet.has(char)) {
+            excludedSet.delete(char);
+            btnElement.classList.remove('banned');
+        } else {
+            excludedSet.add(char);
+            btnElement.classList.add('banned');
+        }
+        updateResults(); // 实时触发
+    }
+
+    // --- 4. 筛选核心算法 ---
+    function updateResults() {
+        if (dictionary.length === 0) return;
+
+        const targetLength = parseInt(slider.value);
+        const poolChars = possibleInput.value.toLowerCase(); 
+        const mustChars = existingInput.value.toLowerCase();
+        
+        // 性能优化：先过滤长度，大幅减小后续循环次数
+        // 由于词库很大，我们只遍历一次
+        const matches = [];
+        
+        for (let i = 0; i < dictionary.length; i++) {
+            const word = dictionary[i];
+            
+            // A. 长度检查 (最快)
+            if (word.length !== targetLength) continue;
+
+            // B. 排除检查 (较快)
+            let isExcluded = false;
+            for (let j = 0; j < word.length; j++) {
+                if (excludedSet.has(word[j])) {
+                    isExcluded = true;
+                    break;
+                }
+            }
+            if (isExcluded) continue;
+
+            // C. 必含字母检查
+            if (mustChars.length > 0) {
+                let hasAllMusts = true;
+                for (let j = 0; j < mustChars.length; j++) {
+                    if (!word.includes(mustChars[j])) {
+                        hasAllMusts = false;
+                        break;
+                    }
+                }
+                if (!hasAllMusts) continue;
+            }
+
+            // D. 字母池检查
+            if (poolChars.length > 0) {
+                let fromPool = true;
+                for (let j = 0; j < word.length; j++) {
+                    if (!poolChars.includes(word[j])) {
+                        fromPool = false;
+                        break;
+                    }
+                }
+                if (!fromPool) continue;
+            }
+
+            // 通过所有检查
+            matches.push(word);
+
+            // 保护机制：如果匹配数量太多（例如 > 500），为了不卡死 DOM，我们可以在渲染阶段截断
+            // 但为了统计准确，这里我们收集所有，但在 render 时限制
+        }
+
+        renderList(matches);
+    }
+
+    // --- 5. 渲染列表 ---
+    function renderList(words) {
+        wordList.innerHTML = '';
+        matchCount.textContent = `${words.length} 个结果`;
+
+        if (words.length === 0) {
+            wordList.innerHTML = '<div style="color:#999; width:100%; text-align:center; padding:20px;">没有找到符合条件的单词</div>';
+            return;
+        }
+
+        // 限制显示数量，防止浏览器崩溃
+        const LIMIT = 300;
+        const displayWords = words.slice(0, LIMIT);
+
+        displayWords.forEach(word => {
+            const tag = document.createElement('span');
+            tag.className = 'word-tag';
+            tag.textContent = word;
+            tag.onclick = () => {
+                navigator.clipboard.writeText(word);
+                // 闪烁效果
+                const originalBg = tag.style.background;
+                tag.style.background = '#27ae60';
+                tag.style.color = 'white';
+                tag.textContent = '已复制!';
+                setTimeout(() => {
+                    tag.style.background = originalBg;
+                    tag.style.color = '';
+                    tag.textContent = word;
+                }, 600);
+            };
+            wordList.appendChild(tag);
+        });
+
+        if (words.length > LIMIT) {
+            const warning = document.createElement('div');
+            warning.style.width = '100%';
+            warning.style.textAlign = 'center';
+            warning.style.padding = '10px';
+            warning.style.color = '#e67e22';
+            warning.style.fontWeight = 'bold';
+            warning.textContent = `⚠️ 结果太多 (${words.length} 个)，仅显示前 ${LIMIT} 个。请尝试增加更多筛选条件（如排除字母）。`;
+            wordList.appendChild(warning);
+        }
+    }
+
+    // --- 6. 事件监听 ---
+    slider.addEventListener('input', (e) => {
+        lengthDisplay.textContent = e.target.value;
+        updateResults();
+    });
+
+    possibleInput.addEventListener('input', updateResults);
+    existingInput.addEventListener('input', updateResults);
+
+</script>
+
+</body>
+</html>
